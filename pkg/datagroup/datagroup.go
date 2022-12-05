@@ -1,26 +1,35 @@
-package main
+package datagroup
 
 import (
 	"context"
-	"log"
-	"os"
+	"fmt"
 
 	"github.com/chromedp/chromedp"
 )
 
-func main() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+type Config struct {
+	Login    string
+	Password string
+}
+
+type DataGroup struct {
+	config Config
+}
+
+func New(config Config) *DataGroup {
+	return &DataGroup{config: config}
+}
+
+func (dg *DataGroup) IsOnline(ctx context.Context) (bool, error) {
+	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 
-	login := os.Getenv("DATAGROUP_LOGIN")
-	password := os.Getenv("DATAGROUP_PASSWORD")
-
 	var ip string
-	if err := chromedp.Run(ctx, userIP(login, password, &ip)); err != nil {
-		log.Fatal(err)
+	if err := chromedp.Run(ctx, userIP(dg.config.Login, dg.config.Password, &ip)); err != nil {
+		return false, fmt.Errorf("run: %w", err)
 	}
 
-	log.Printf("Is online: %t, ip: %s", ip != "", ip)
+	return ip != "", nil
 }
 
 func userIP(login, password string, ip *string) chromedp.Tasks {
