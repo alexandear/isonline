@@ -8,24 +8,32 @@ import (
 	"time"
 
 	"github.com/alexandear/isonline/pkg/datagroup"
+	"github.com/alexandear/isonline/pkg/xflag"
 )
 
 func main() {
-	var (
-		dataGroupLogin    string
-		dataGroupPassword string
-	)
-	flag.StringVar(&dataGroupLogin, "datagroup_login", "", "Login to personal cabinet https://my.datagroup.ua")
-	flag.StringVar(&dataGroupPassword, "datagroup_password", "", "Password to personal cabinet")
-	if dataGroupLogin == "" || dataGroupPassword == "" {
-		dataGroupLogin = os.Getenv("DATAGROUP_LOGIN")
-		dataGroupPassword = os.Getenv("DATAGROUP_PASSWORD")
+	var dgLoginFlag xflag.StringFlag
+	flag.Var(&dgLoginFlag, "datagroup_login", "Login to personal cabinet https://my.datagroup.ua")
+	var dgPasswordFlag xflag.StringFlag
+	flag.Var(&dgPasswordFlag, "datagroup_password", "Password to personal cabinet")
+	flag.Parse()
+
+	dgLogin := dgLoginFlag.Value()
+	dgPassword := dgPasswordFlag.Value()
+	if !dgLoginFlag.IsSet() {
+		dgLogin = os.Getenv("DATAGROUP_LOGIN")
+		dgPassword = os.Getenv("DATAGROUP_PASSWORD")
 	}
 
-	provider := datagroup.New(datagroup.Config{
-		Login:    dataGroupLogin,
-		Password: dataGroupPassword,
+	log.Printf("Using provider: DataGroup, login: %s", dgLogin)
+
+	provider, err := datagroup.New(datagroup.Config{
+		Login:    dgLogin,
+		Password: dgPassword,
 	})
+	if err != nil {
+		log.Fatalf("Failed to create DataGroup provider: %v\n", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

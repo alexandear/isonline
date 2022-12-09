@@ -12,12 +12,22 @@ type Config struct {
 	Password string
 }
 
+func (c Config) IsValid() error {
+	if c.Login == "" {
+		return fmt.Errorf("login must be non-empty")
+	}
+	return nil
+}
+
 type DataGroup struct {
 	config Config
 }
 
-func New(config Config) *DataGroup {
-	return &DataGroup{config: config}
+func New(config Config) (*DataGroup, error) {
+	if err := config.IsValid(); err != nil {
+		return nil, fmt.Errorf("invalid config: %v", err)
+	}
+	return &DataGroup{config: config}, nil
 }
 
 func (dg *DataGroup) IsOnline(ctx context.Context) (bool, error) {
